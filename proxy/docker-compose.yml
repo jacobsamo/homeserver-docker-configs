@@ -1,12 +1,12 @@
 version: "3.8"
 
 services:
-  cloudflared: 
+  cloudflared:
     image: cloudflare/cloudflared:latest
-    container_name: cloudflare-tunnel 
-    restart: unless-stopped 
+    container_name: cloudflare-tunnel
+    restart: unless-stopped
     command: tunnel --no-autoupdate run
-    environment: 
+    environment:
       TUNNEL_TOKEN_FILE: /run/secrets/cf_tunnel_token
     secrets:
       - cf_tunnel_token
@@ -24,6 +24,7 @@ services:
     ports:
       - "80:80"
       - "443:443"
+      - "8080:8080"
       # - "443:443/tcp" # Uncomment if you want HTTP3
       # - "443:443/udp" # Uncomment if you want HTTP3
     environment:

@@ -1,7 +1,6 @@
 api:
   dashboard: true
   debug: true
-
 entryPoints:
   http:
     address: ":80"
@@ -12,16 +11,14 @@ entryPoints:
           scheme: https
   https:
     address: ":443"
-
 serversTransport:
   insecureSkipVerify: true
-
 providers:
   docker:
     endpoint: "unix:///var/run/docker.sock"
     exposedByDefault: false
-  # file:
-  #   filename: /config.yml
+  file:
+    filename: /config.yml
 certificatesResolvers:
   cloudflare:
     acme:
@@ -36,28 +33,3 @@ certificatesResolvers:
         resolvers:
           - "1.1.1.1:53"
           - "1.0.0.1:53"
-
-# Optional: Global redirect to HTTPS
-# http:
-#   middlewares:
-#     default-headers:
-#       headers:
-#         frameDeny: true
-#         sslRedirect: true
-#         browserXssFilter: true
-#         contentTypeNosniff: true
-#         forceSTSHeader: true
-#         stsIncludeSubdomains: true
-#         stsPreload: true
-#         stsSeconds: 31536000
-#         customFrameOptionsValue: SAMEORIGIN
-#     secure-headers:
-#       headers:
-#         accessControlAllowMethods:
-#           - GET
-#           - OPTIONS
-#           - PUT
-#         accessControlMaxAge: 100
-#         hostsProxyHeaders:
-#           - "X-Forwarded-Host"
-#         referrerPolicy: "same-origin"
