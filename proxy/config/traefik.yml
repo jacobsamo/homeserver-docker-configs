@@ -28,7 +28,6 @@ certificatesResolvers:
       email: jacob35422@gmail.com
       storage: acme.json
       caServer: https://acme-v02.api.letsencrypt.org/directory # prod (default)
-      caServer: https://acme-v02.api.letsencrypt.org/directory
       dnsChallenge:
         provider: cloudflare
         # Uncomment below if you have issues with certificate generation
