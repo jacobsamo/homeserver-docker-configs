@@ -2,12 +2,16 @@ version: "3.8"
 
 services:
   cloudflared: 
-      image: cloudflare/cloudflared 
-      container_name: cloudflare-tunnel 
-      restart: unless-stopped 
-      command: tunnel --no-autoupdate run
-      environment: 
-        TUNNEL_TOKEN: /run/secrets/cf_tunnel_token
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflare-tunnel 
+    restart: unless-stopped 
+    command: tunnel --no-autoupdate run
+    environment: 
+      TUNNEL_TOKEN_FILE: /run/secrets/cf_tunnel_token
+    secrets:
+      - cf_tunnel_token
+    networks:
+      - proxy
 
   traefik:
     image: traefik:v3.5
@@ -18,23 +22,21 @@ services:
     networks:
       - proxy
     ports:
-      - 80:80
-      - 443:443
-      # - 443:443/tcp # Uncomment if you want HTTP3
-      # - 443:443/udp # Uncomment if you want HTTP3
+      - "80:80"
+      - "443:443"
+      # - "443:443/tcp" # Uncomment if you want HTTP3
+      # - "443:443/udp" # Uncomment if you want HTTP3
     environment:
-      CF_DNS_API_TOKEN_FILE: /run/secrets/cf_api_token # note using _FILE for docker secrets
-      # CF_DNS_API_TOKEN: ${CF_DNS_API_TOKEN} # if using .env
+      CF_DNS_API_TOKEN_FILE: /run/secrets/cf_api_token
       TRAEFIK_DASHBOARD_CREDENTIALS: ${TRAEFIK_DASHBOARD_CREDENTIALS}
     secrets:
       - cf_api_token
-    env_file: .env # use .env
+    env_file: .env
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./config/traefik.yml:/traefik.yml:ro
       - ./config/acme.json:/acme.json
-      # - ./data/config.yml:/config.yml:ro
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik.entrypoints=http"
@@ -55,6 +57,8 @@ services:
 secrets:
   cf_api_token:
     file: ./cf_api_token.txt
+  cf_tunnel_token:
+    file: ./cf_tunnel_token.txt
 
 networks:
   proxy:
