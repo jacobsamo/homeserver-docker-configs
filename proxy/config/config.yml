@@ -19,15 +19,15 @@ http:
         permanent: true
 
   routers:
-    portainer:
+    proxmox:
       entryPoints:
         - "https"
-      rule: "Host(`portainer.jsamo.com`)"
+      rule: "Host(`proxmox.jsamo.com`)"
       middlewares:
         - default-security-headers
         - https-redirectscheme
       tls: {}
-      service: portainer
+      service: proxmox
 
   services:
     proxmox:
