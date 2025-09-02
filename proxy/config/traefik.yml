@@ -1,17 +1,25 @@
 api:
   dashboard: true
-  insecure: true
   debug: true
 entryPoints:
   http:
     address: ":80"
     http:
+    #  middlewares: # uncomment if using CrowdSec - see my video
+    #    - crowdsec-bouncer@file
       redirections:
-        entryPoint:
+        entrypoint:
           to: https
           scheme: https
   https:
     address: ":443"
+    # http:
+    #  middlewares: # uncomment if using CrowdSec - see my video
+    #    - crowdsec-bouncer@file
+  # tcp:
+   # address: ":10000"
+  # apis:
+   # address: ":33073"
 serversTransport:
   insecureSkipVerify: true
 providers:
@@ -23,15 +31,13 @@ providers:
 certificatesResolvers:
   cloudflare:
     acme:
-      email: jacob35422@email.com
+      caServer: https://acme-v02.api.letsencrypt.org/directory # production (default)
+      # caServer: https://acme-staging-v02.api.letsencrypt.org/directory # staging (testing)
+      email: jacob35422@email.com # Cloudflare email (or other provider)
       storage: acme.json
-      caServer: https://acme-v02.api.letsencrypt.org/directory # prod (default)
-      # caServer: https://acme-staging-v02.api.letsencrypt.org/directory # staging
       dnsChallenge:
-        provider: cloudflare
-        # Uncomment below if you have issues with certificate generation
-        # disablePropagationCheck: true
-        # delayBeforeCheck: 60s
+        provider: cloudflare # change as required
+        # disablePropagationCheck: true # Some people using Cloudflare note this can solve DNS propagation issues.
         resolvers:
           - "1.1.1.1:53"
           - "1.0.0.1:53"
