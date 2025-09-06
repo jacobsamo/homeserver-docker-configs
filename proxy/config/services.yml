@@ -1,48 +1,81 @@
 http:
   routers:
     proxmox:
-      rule: Host(`proxmox.${DOMAIN}`)
+      entryPoints:
+        - "https"
+      rule: "Host(`proxmox.${DOMAIN}`)"
+      middlewares:
+        - default-headers
+        - https-redirectscheme
+      tls: {}
       service: proxmox
-      entryPoints:
-        - https
-      tls:
-        certResolver: cloudflare
-    homeassistant:
-      rule: Host(`homeassistant.${DOMAIN}`)
-      service: homeassistant
-      entryPoints:
-        - https
-      tls:
-        certResolver: cloudflare
-    n8n:
-      rule: Host(`n8n.${DOMAIN}`)
-      service: n8n
-      entryPoints:
-        - https
-      tls:
-        certResolver: cloudflare
-    pihole:
-      rule: Host(`pihole.${DOMAIN}`)
-      service: pihole
-      entryPoints:
-        - https
-      tls:
-        certResolver: cloudflare
+    # homeassistant:
+    #   rule: Host(`homeassistant.${DOMAIN}`)
+    #   service: homeassistant
+    #   entryPoints:
+    #     - https
+    #   tls:
+    #     certResolver: cloudflare
+    # n8n:
+    #   rule: Host(`n8n.${DOMAIN}`)
+    #   service: n8n
+    #   entryPoints:
+    #     - https
+    #   tls:
+    #     certResolver: cloudflare
+    # pihole:
+    #   rule: Host(`pihole.${DOMAIN}`)
+    #   service: pihole
+    #   entryPoints:
+    #     - https
+    #   tls:
+    #     certResolver: cloudflare
 
   services:
     proxmox:
       loadBalancer:
         servers:
           - url: https://192.168.0.102:8006 # Use https:// if required
-    homeassistant:
-      loadBalancer:
-        servers:
-          - url: http://192.168.0.105:8123
-    n8n:
-      loadBalancer:
-        servers:
-          - url: http://192.168.0.109:5678
-    pihole:
-      loadBalancer:
-        servers:
-          - url: http://192.168.0.111:80
+    # homeassistant:
+    #   loadBalancer:
+    #     servers:
+    #       - url: http://192.168.0.105:8123
+    # n8n:
+    #   loadBalancer:
+    #     servers:
+    #       - url: http://192.168.0.109:5678
+    # pihole:
+    #   loadBalancer:
+    #     servers:
+    #       - url: http://192.168.0.111:80
+
+  middlewares:
+    https-redirectscheme:
+      redirectScheme:
+        scheme: https
+        permanent: true
+    default-headers:
+      headers:
+        frameDeny: true
+        browserXssFilter: true
+        contentTypeNosniff: true
+        forceSTSHeader: true
+        stsIncludeSubdomains: true
+        stsPreload: true
+        stsSeconds: 15552000
+        customFrameOptionsValue: SAMEORIGIN
+        customRequestHeaders:
+          X-Forwarded-Proto: https
+
+    default-whitelist:
+      ipAllowList:
+        sourceRange:
+          - "10.0.0.0/8"
+          - "192.168.0.0/16"
+          - "172.16.0.0/12"
+
+    secured:
+      chain:
+        middlewares:
+          - default-whitelist
+          - default-headers

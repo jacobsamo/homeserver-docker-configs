@@ -8,10 +8,11 @@ services:
     ports:
       - 80:80
       - 443:443
-      - 8080:8080  # Dashboard (optional, internal only)
-    env_file: .env # use .env
+      - 8080:8080 # Dashboard (optional, internal only)
+    env_file:
+      - .env
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro  # For Docker provider
+      - /var/run/docker.sock:/var/run/docker.sock:ro # For Docker provider
       - ./config/traefik.yml:/traefik.yml:ro
       - ./config/services.yml:/services.yml:ro
       - ./config/acme.json:/acme.json
@@ -20,11 +21,21 @@ services:
       CF_DNS_API_TOKEN: ${CLOUDFLARE_DNS_API_TOKEN} #dns
       TRAEFIK_DASHBOARD_CREDENTIALS: ${TRAEFIK_DASHBOARD_CREDENTIALS}
     labels:
-      - traefik.enable=true
-      - traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)
-      - traefik.http.routers.traefik.service=api@internal
-      - traefik.http.routers.traefik.middlewares=auth
-      - traefik.http.middlewares.auth.basicauth.users=${TRAEFIK_DASHBOARD_CREDENTIALS}  # Hashed format
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.entrypoints=http"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_DASHBOARD_CREDENTIALS}"
+      - "traefik.http.middlewares.traefik-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto=https"
+      - "traefik.http.routers.traefik.middlewares=traefik-https-redirect"
+      - "traefik.http.routers.traefik-secure.entrypoints=https"
+      - "traefik.http.routers.traefik-secure.rule=Host(`traefik.${DOMAIN}`)"
+      - "traefik.http.routers.traefik-secure.middlewares=traefik-auth"
+      - "traefik.http.routers.traefik-secure.tls=true"
+      - "traefik.http.routers.traefik-secure.tls.certresolver=cloudflare"
+      - "traefik.http.routers.traefik-secure.tls.domains[0].main=${DOMAIN}"
+      - "traefik.http.routers.traefik-secure.tls.domains[0].sans=*.${DOMAIN}"
+      - "traefik.http.routers.traefik-secure.service=api@internal"
 
   cloudflared:
     image: cloudflare/cloudflared:latest
@@ -32,7 +43,29 @@ services:
     restart: unless-stopped
     networks:
       - proxy
+    env_file: .env
+    dns:
+      - 1.1.1.1
+      - 1.0.0.1
     command: tunnel --no-autoupdate run --token ${TUNNEL_TOKEN}
+    depends_on:
+      - traefik
+
+  whoami_app:
+    image: "traefik/whoami"
+    container_name: "whoami_service_instance"
+    restart: unless-stopped
+    networks:
+      - proxy_network
+    labels:
+      - "traefik.enable=true"
+      # Router definition for this application
+      - "traefik.http.routers.whoami-app-router.rule=Host(`whoami.${DOMAIN}`)"
+      - "traefik.http.routers.whoami-app-router.entrypoints=websecure"
+      - "traefik.http.routers.whoami-app-router.tls.certresolver=cloudflare"
+      - "traefik.http.routers.whoami-app-router.service=whoami-app-service"
+      # Service definition pointing to the container's port
+      - "traefik.http.services.whoami-app-service.loadbalancer.server.port=80" # whoami listens on port 80
 
 networks:
   proxy:
